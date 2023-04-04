@@ -1,0 +1,326 @@
+from flask import Flask, request, send_file, render_template, redirect, url_for, session, flash, Response
+from werkzeug.utils import secure_filename
+import os
+from pathlib import Path
+import zipfile
+import hashlib
+import json
+import datetime
+import config
+import re
+
+
+
+
+current_directory = os.getcwd()
+UPLOAD_FOLDER = current_directory + "/" + config.Zip_Upload_Folder + "/"
+VERSION_FOLDER = current_directory + "/" + config.Versions + "/"
+VERSION_FILE = current_directory +"/"+config.Version_Json
+ALLOWED_EXTENSIONS = {'zip'}
+
+app = Flask(__name__)
+app.static_folder = 'static'
+app.secret_key = config.AppSecretKey
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+# function for checking allowed file types for upload in admin panel
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_latest_version(directory):
+    versions = []
+    for filename in os.listdir(directory):
+        if filename.startswith('v'):
+            # extract the version number from the filename
+            version_parts = filename[1:].split('-')
+            version_number = tuple(int(part) for part in version_parts)
+            versions.append(version_number)
+    if versions:
+        # sort the versions and return the highest one
+        return 'v' + '-'.join(str(part) for part in max(versions))
+    else:
+        # no versions found
+        return "no version"
+
+def get_all_versions():
+    versions = []
+
+    for folder in os.listdir(VERSION_FOLDER):
+        if os.path.isdir(os.path.join(VERSION_FOLDER, folder)):
+            versions.append(folder)
+
+    return versions
+
+def get_current_live_version():
+    with open(VERSION_FILE, "r") as f:
+        data = json.load(f)
+
+    return(data)
+
+def set_current_live_version(new_version):
+
+    data = {"version": new_version}
+
+    with open("version.json", "w") as f:
+        json.dump(data, f)
+
+    return "updated to version "+new_version
+
+def generate_directory_structure(directory_path, parent_path=""):
+    directory_structure = {}
+    for item in os.listdir(directory_path):
+        item_path = os.path.join(directory_path, item)
+        if os.path.isfile(item_path):
+            # calculate md5 hash of file
+            with open(item_path, 'rb') as f:
+                md5_hash = hashlib.md5(f.read()).hexdigest()
+            # add file to directory structure
+            if parent_path:
+                directory_structure[parent_path+"/"+item] = md5_hash
+            else:
+                directory_structure[item] = md5_hash
+        elif os.path.isdir(item_path):
+            # recursively generate directory structure
+            subdirectory_structure = generate_directory_structure(item_path, item)
+            # add subdirectory files to directory structure
+            for key, value in subdirectory_structure.items():
+                if parent_path:
+                    directory_structure[parent_path+"/"+key] = value
+                else:
+                    directory_structure[key] = value
+    return directory_structure
+
+
+def setup_version(zip_file_path, version):
+    # create the path for the version folder
+    pattern = r'^v\d+-\d+-\d+$'  # regex pattern to match format vX-Y-Z
+    if re.match(pattern, version):
+        version_folder_path = VERSION_FOLDER + version
+        # check if the version folder already exists
+        if os.path.exists(version_folder_path):
+            res = (f"Error: This '{version}' already exists please select another.")
+            return res
+        # create the new version folder
+        os.makedirs(version_folder_path)
+        # extract the zip file to the version folder
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(version_folder_path)
+
+        # generate directory structure and save to JSON file
+        json_data = generate_directory_structure(version_folder_path)
+        if not json_data:
+            # remove empty version directory
+            os.rmdir(version_folder_path)
+            res = "Error: version directory is empty."
+        else:
+            # save directory structure to JSON file
+            json_path = os.path.join(version_folder_path, 'directory_structure.json')
+            with open(json_path, 'w') as f:
+                json.dump(json_data, f, indent=4)
+            res = f"Zip file uploaded, extracted to version folder '{version}' and json file built successfully."
+        return res
+    else:
+        res = "Invalid version type, version follows syntax v1-0-0"
+        return res
+
+
+
+
+@app.route("/control_me",  methods=['GET', 'POST'])
+def control_me():
+    error = None
+    if request.method == 'POST':
+        if request.form['username'] != 'admin' or request.form['password'] != 'admin':
+            error = 'Invalid Credentials. Please try again.'
+        else:
+            session['logged_in'] = True
+            return redirect(url_for('dashboard'))
+    return render_template('login.html', error=error)
+
+
+@app.route("/dashboard")
+def dashboard():
+    if 'logged_in' in session and session['logged_in']:
+        return render_template("dashboard.html")
+    else:
+        return redirect(url_for('control_me'))
+
+@app.route("/upload_build", methods=['GET', 'POST'])
+def upload_build():
+    if 'logged_in' in session and session['logged_in']:
+        if request.method == "POST":
+            if 'file' not in request.files:
+                flash("failed select file please")
+                return redirect(request.url)
+            file = request.files['file']
+            if file.filename == '':
+                flash("failed select file please")
+                return redirect(request.url)
+            if file and allowed_file(file.filename):
+                user_version_request = "v1-0-0"
+                if request.form.get('major') and request.form.get('minor') and request.form.get('major'):
+                    major = request.form.get('major')
+                    minor = request.form.get('minor')
+                    micro = request.form.get('micro')
+                    user_version_request = "v"+major+"-"+minor+"-"+micro
+
+
+                current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+                filename = current_time + '_' + file.filename
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+                flash(setup_version(UPLOAD_FOLDER+filename, user_version_request))
+                #flash("success")
+                return redirect(request.url)
+            else:
+                flash("sorry this file could not be allowed for upload")
+                return redirect(request.url)
+
+        else:
+            version_directory = Path(current_directory + "/" + config.Versions)
+            current_version = get_latest_version(version_directory)
+
+
+
+            if current_version == "no version":
+                return render_template("upload_build.html", show_no_version=True)
+            else:
+                version_parts = current_version.split('-')
+
+                major_version = int(version_parts[0][1:])
+                minor_version = int(version_parts[1])
+                micro_version = int(version_parts[2])
+                print(get_latest_version(version_directory))
+                return render_template("upload_build.html", show_version=True, version_number=current_version,major=major_version,minor=minor_version,micro=micro_version)
+    else:
+        return redirect(url_for('control_me'))
+
+
+@app.route("/set_version", methods=['GET', 'POST'])
+def set_version():
+    if 'logged_in' in session and session['logged_in']:
+        if request.method == "POST":
+            if request.form.get('live_version'):
+                user_version_request = request.form.get('live_version')
+                set_current_live_version(user_version_request)
+        return render_template("set_version.html",versions=get_all_versions(),current_version=get_current_live_version())
+    else:
+        return redirect(url_for('control_me'))
+
+
+def is_valid_version(version):
+    VERSION_REGEX = r'^v\d+-\d+-\d+$'
+    return bool(re.match(VERSION_REGEX, version))
+
+@app.route('/download', methods=['GET'])
+def download_file():
+    if request.args.get('version') and request.args.get('filename'):
+        version = request.args.get('version')
+        filename = request.args.get('filename')
+        current_version = get_current_live_version()
+        if not is_valid_version(version):
+            return 'Error: Invalid version format'
+        if not version or not filename:
+            return 'Error: version and filename parameters are required'
+        if version != current_version['version']:
+            return 'Error: You are requesting a version which is not available'
+        filename = os.path.normpath(filename)
+        directory = os.path.join(VERSION_FOLDER, version)
+        file_path = os.path.join(directory, filename)
+        if not os.path.exists(file_path):
+            return 'File Must be removed'
+
+        def generate():
+            with open(file_path, 'rb') as f:
+                while True:
+                    chunk = f.read(256*1024*1024) # read 256MB at a time note you might wanna change this in production
+                    if not chunk:
+                        break
+                    yield chunk
+
+        return Response(generate(), headers={
+            'Content-Disposition': f'attachment; filename={filename}'
+        })
+
+    else:
+        return "Error: invalid paramaters"
+
+
+
+@app.route('/request_version')
+def request_version():
+    return get_current_live_version()
+
+@app.route('/request_version_details', methods=['GET'])
+def request_version_details():
+    if request.args.get('version'):
+        current_version = get_current_live_version()
+        if current_version['version'] == request.args.get('version'):
+
+            version_details = Path(VERSION_FOLDER + "/" + current_version['version']+ "/directory_structure.json")
+
+            if not version_details.is_file():
+                return "Error: invalid json file"#
+            else:
+                with open(version_details, "r") as f:
+                    data = json.load(f)
+
+                return (data)
+
+
+        else:
+            return "Error: Invalid version"
+    else:
+        return "Error: give me a version"
+
+if __name__ == "__main__":
+
+    start_message = '''
+
+        \x1b[6;30;42m############################################################################\x1b[0m
+        \x1b[6;30;42m#                       V0dka Public Game Manager                          #\x1b[0m
+        \x1b[6;30;42m#                                Version 1.0.0                             #\x1b[0m
+        \x1b[6;30;42m############################################################################\x1b[0m
+
+    '''
+
+    print(start_message)
+    build_exist = False
+    version_exist = False
+    version_file = False
+    build_directory = Path(current_directory + "/" + config.Zip_Upload_Folder)
+    version_directory = Path(current_directory + "/" + config.Versions)
+    version_file = Path(current_directory + "/"+config.Version_Json)
+
+    if not version_file.is_file():
+        print('\033[91m' + "Making Version File" + '\033[0m')
+        data = {"version": "none"}
+        with open(version_file, "w") as f:
+            json.dump(data, f)
+
+    if not build_directory.is_dir():
+        print('\033[91m' + "build directory does not exist creating directory" + '\033[0m')
+        os.mkdir(build_directory)
+        build_exist = True
+        #app.run(host=config.IP, port=config.Port, debug=config.Debug)
+    else:
+        print("build directory exists")
+        build_exist = True
+        #app.run(host=config.IP, port=config.Port, debug=config.Debug)
+
+    if not version_directory.is_dir():
+        print('\033[91m' + "Version directory does not exist creating directory" + '\033[0m')
+        os.mkdir(version_directory)
+        version_exist = True
+    else:
+        print("build directory exists")
+        version_exist = True
+
+
+    if version_exist and build_directory:
+        print("success starting")
+        app.run(host=config.IP, port=config.Port, debug=config.Debug)
+    else:
+        print("something went wrong")

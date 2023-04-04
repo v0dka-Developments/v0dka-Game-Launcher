@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+       <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                <h1 class="h2">Upload Build</h1>
+
+            </div>
+
+
+            <div class="jumbotron">
+                <div class="container">
+                    <h1 class="display-3">Lets Upload Your Build</h1>
+                    <p class="lead">The file must be a zip file, if you do not upload a zip file the system will not
+                        deploy it!
+                    </p>
+
+                    {% if show_no_version %}
+                    <p class="lead">You have no versions currently uploaded the default version will be v1.0.0 your next game build upload you will be able to
+                        select a version + minor version for you game build.
+                    </p>
+
+                    {% endif %}
+                    {% if show_version and version_number %}
+                        <p class="lead"> current latest version is: {{ version_number }}
+
+                        </p>
+                    {% endif %}
+
+
+
+                    <form method="post" enctype="multipart/form-data">
+                          {% if show_version and version_number %}
+                        <div class="row">
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                              <label for="major">Major:</label>
+                              <select class="form-control" id="major" name="major">
+                                {% for i in range(major, 101) %}
+                                {% if i == major %}
+                                <option value="{{ i }}" selected>{{ i }}</option>
+                                {% else %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endif %}
+                                {% endfor %}
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                              <label for="minor">Minor:</label>
+                              <select class="form-control" id="minor" name="minor">
+                                {% for i in range(minor, 1001) %}
+                                {% if i == minor %}
+                                <option value="{{ i }}" selected>{{ i }}</option>
+                                {% else %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endif %}
+                                {% endfor %}
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                              <label for="micro">Micro:</label>
+                              <select class="form-control" id="micro" name="micro">
+                                {% for i in range(micro, 1001) %}
+                                {% if i == micro %}
+                                <option value="{{ i }}" selected>{{ i }}</option>
+                                {% else %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endif %}
+                                {% endfor %}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        {% endif %}
+                        <div class="pt-5 pb-5">
+                            <input class="form-control-file form-control-lg" name="file" id="formFileLg" type="file">
+                        </div>
+
+                        <button class="btn btn-success btn-lg" type="submit">Upload Build »</button>
+                    </form>
+                    <h3>
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    {% for message in messages %}
+                    {{ message }}
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    </h3>
+                </div>
+            </div>
+        </main>
+{% endblock %}
+
+{% block js %}
+
+<script>
+$(document).ready(function() {
+  // Set initial values
+  var major = parseInt($('#major').val());
+  var minor = parseInt($('#minor').val());
+  var micro = parseInt($('#micro').val());
+
+  // Handle major version change
+  $('#major').change(function() {
+    major = parseInt($(this).val());
+    minor = 0; // reset minor to 0
+    micro = 0;
+    $('#minor').empty(); // set the selected option to 0
+    $('#micro').empty(); // set the selected option to 0
+
+    for (var i = 0; i <= 1000; i++) { // add the remaining options to #minor
+      $('#minor').append($('<option>', {
+        value: i,
+        text: i
+      }));
+      $('#micro').append($('<option>', { // add options to #micro
+        value: i,
+        text: i
+      }));
+    }
+
+    $('#minor').val(0); // set the selected option to 0
+    $('#micro').val(0); // set the selected option to 0
+  });
+
+  // Handle minor version change
+  $('#minor').change(function() {
+    minor = parseInt($(this).val());
+    micro = 0;
+    $('#micro').empty();
+    for (var i = 0; i <= 1000; i++) {
+      $('#micro').append($('<option>', {
+        value: i,
+        text: i
+      }));
+    }
+    $('#micro').val(0); // set the selected option to 0
+  });
+
+
+});
+
+
+</script>
+
+{% endblock %}

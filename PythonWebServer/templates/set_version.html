@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block style %}
+<style>
+button, select {
+    text-align: center;
+}
+</style>
+
+{% endblock %}
+
+{% block content %}
+       <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                <h1 class="h2">Set Version</h1>
+
+            </div>
+
+
+            <div class="jumbotron">
+                <div class="container text-center">
+                    <h1 class="display-3">Set the current live version</h1>
+                    <p class="lead">
+                    </p>
+
+                    {% if show_no_version %}
+                    <p class="lead">You have no versions currently uploaded the default version will be v1.0.0 your next game build upload you will be able to
+                        select a version + minor version for you game build.
+                    </p>
+
+                    {% endif %}
+
+
+
+
+
+
+
+                    {% if show_version and version_number %}
+                        <p class="lead"> current latest version is: {{ version_number }}
+
+                        </p>
+                    {% endif %}
+
+
+
+                    <form method="post">
+                          <div class="col-sm-12">
+                            <div class="form-group">
+                              <label for="live_version">Select Current Live Version: {{ current_version.version }}</label>
+                              <select class="form-control"  name="live_version" class="text-center">
+                                {% for x in versions %}
+                                {% if x == current_version.version %}
+                                <option value="{{ x }}" selected>{{ x }}</option>
+                                {% else %}
+                                <option value="{{ x }}">{{ x }}</option>
+                                {% endif %}
+                                {% endfor %}
+                              </select>
+                            </div>
+                          </div>
+
+
+                        <button class="btn btn-success btn-lg" type="submit">Update Version »</button>
+                    </form>
+                    <h3>
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    {% for message in messages %}
+                    {{ message }}
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    </h3>
+                </div>
+            </div>
+        </main>
+{% endblock %}
+
