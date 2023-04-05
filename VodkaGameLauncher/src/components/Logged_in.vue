@@ -561,6 +561,7 @@ async function runGameInstallation() {
                 let new_check = file_check_obj['total'];
                 if(new_check == 0){
                     current_file.value = "everything upto date woo!";
+                    play_button.value = "play"
                     setTimeout(() => {
                       current_file.value = '';
                     }, 5000); // set the timeout to 5 seconds (5000 milliseconds)
@@ -665,6 +666,7 @@ async function runGameInstallation() {
               let new_check = file_check_obj['total'];
               if(new_check == 0){
                   current_file.value = "everything upto date woo!";
+                  play_button.value = "play"
                   setTimeout(() => {
                     current_file.value = '';
                   }, 5000); // set the timeout to 5 seconds (5000 milliseconds)
