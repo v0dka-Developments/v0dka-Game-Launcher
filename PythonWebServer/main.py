@@ -23,12 +23,26 @@ app.static_folder = 'static'
 app.secret_key = config.AppSecretKey
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+######################################################################
+
+#                          FUNCTIONS                                 #
+#   bunch of functions to help with tasks thoughout the app          #
+
+
+######################################################################
+
+
+# regular expression to make sure version is correct
+def is_valid_version(version):
+    VERSION_REGEX = r'^v\d+-\d+-\d+$'
+    return bool(re.match(VERSION_REGEX, version))
+
 
 # function for checking allowed file types for upload in admin panel
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+# function for us to find the most recent version by folder name
 def get_latest_version(directory):
     versions = []
     for filename in os.listdir(directory):
@@ -43,7 +57,7 @@ def get_latest_version(directory):
     else:
         # no versions found
         return "no version"
-
+# list all the versions this is used to populate the version selector in the admin panel
 def get_all_versions():
     versions = []
 
@@ -52,13 +66,13 @@ def get_all_versions():
             versions.append(folder)
 
     return versions
-
+## gets the current live version from the json file in the root directory
 def get_current_live_version():
     with open(VERSION_FILE, "r") as f:
         data = json.load(f)
 
     return(data)
-
+## updates the current live version in the json file
 def set_current_live_version(new_version):
 
     data = {"version": new_version}
@@ -68,6 +82,8 @@ def set_current_live_version(new_version):
 
     return "updated to version "+new_version
 
+
+# used to generate the directory_listings.json
 def generate_directory_structure(directory_path, parent_path=""):
     directory_structure = {}
     for item in os.listdir(directory_path):
@@ -126,8 +142,20 @@ def setup_version(zip_file_path, version):
         return res
 
 
+#####################################################################################
 
 
+
+
+#                                   APP ROUTES                                      #
+#   handles all the requests to the actual web app                                  #
+
+
+
+#####################################################################################
+
+
+#main login page http://domain/control_me
 @app.route("/control_me",  methods=['GET', 'POST'])
 def control_me():
     error = None
@@ -139,7 +167,7 @@ def control_me():
             return redirect(url_for('dashboard'))
     return render_template('login.html', error=error)
 
-
+#dashboard
 @app.route("/dashboard")
 def dashboard():
     if 'logged_in' in session and session['logged_in']:
@@ -147,6 +175,7 @@ def dashboard():
     else:
         return redirect(url_for('control_me'))
 
+#upload build page
 @app.route("/upload_build", methods=['GET', 'POST'])
 def upload_build():
     if 'logged_in' in session and session['logged_in']:
@@ -170,9 +199,8 @@ def upload_build():
                 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
                 filename = current_time + '_' + file.filename
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
+                # alert the user to success...
                 flash(setup_version(UPLOAD_FOLDER+filename, user_version_request))
-                #flash("success")
                 return redirect(request.url)
             else:
                 flash("sorry this file could not be allowed for upload")
@@ -197,7 +225,7 @@ def upload_build():
     else:
         return redirect(url_for('control_me'))
 
-
+# set current live version
 @app.route("/set_version", methods=['GET', 'POST'])
 def set_version():
     if 'logged_in' in session and session['logged_in']:
@@ -210,10 +238,20 @@ def set_version():
         return redirect(url_for('control_me'))
 
 
-def is_valid_version(version):
-    VERSION_REGEX = r'^v\d+-\d+-\d+$'
-    return bool(re.match(VERSION_REGEX, version))
 
+
+#
+#
+#
+#
+#   public download route
+#   you can wrap this in auth but for this i have not
+#   server will fetch file on behalf of user and not expose the direct file path
+#   and stream it in chunks currently of 256mb which is overkill
+#   if you was using this in production drop down to 1-5mb otherwise goodbye ram...
+#
+#
+#
 @app.route('/download', methods=['GET'])
 def download_file():
     if request.args.get('version') and request.args.get('filename'):
@@ -248,11 +286,12 @@ def download_file():
         return "Error: invalid paramaters"
 
 
-
+## returns the current live version
 @app.route('/request_version')
 def request_version():
     return get_current_live_version()
 
+# returns the "manifest" file which is the directory_structure.json
 @app.route('/request_version_details', methods=['GET'])
 def request_version_details():
     if request.args.get('version'):
@@ -275,6 +314,29 @@ def request_version_details():
     else:
         return "Error: give me a version"
 
+
+## login this should really be to another service but it is an example
+## built into this package for a demo
+@app.route("/userlogin", methods=['POST'])
+def userlogin():
+    if request.is_json:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        if username and password:
+            if username == "admin" and password == "pass":
+                return {"success": True}
+            else:
+                return {"success": False, "message": "Invalid username or password"}
+        else:
+            return {"success": False, "message": "Missing username or password"}
+    else:
+        return {"success": False, "message": "Request must contain JSON data"}
+
+
+
+
+
 if __name__ == "__main__":
 
     start_message = '''
@@ -293,7 +355,7 @@ if __name__ == "__main__":
     build_directory = Path(current_directory + "/" + config.Zip_Upload_Folder)
     version_directory = Path(current_directory + "/" + config.Versions)
     version_file = Path(current_directory + "/"+config.Version_Json)
-
+    ## inital launch we make sure files exist that we need...
     if not version_file.is_file():
         print('\033[91m' + "Making Version File" + '\033[0m')
         data = {"version": "none"}
@@ -304,11 +366,10 @@ if __name__ == "__main__":
         print('\033[91m' + "build directory does not exist creating directory" + '\033[0m')
         os.mkdir(build_directory)
         build_exist = True
-        #app.run(host=config.IP, port=config.Port, debug=config.Debug)
+
     else:
         print("build directory exists")
         build_exist = True
-        #app.run(host=config.IP, port=config.Port, debug=config.Debug)
 
     if not version_directory.is_dir():
         print('\033[91m' + "Version directory does not exist creating directory" + '\033[0m')

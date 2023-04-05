@@ -245,14 +245,7 @@ fn validate_me(params: HashMap<String, String>) -> String {
 }
 
 
-/*
-#[tauri::command]
-fn is_game_installed() -> bool {
-    let install_game_path = "D:/aaaaaaaaaa/game_install_config.json";
-    fs::metadata(install_game_path)
-        .map(|metadata| metadata.is_file())
-        .unwrap_or(false)
-}*/
+
 #[tauri::command]
 fn is_game_installed() -> bool {
     let appdata_path = dirs::data_dir().unwrap();
@@ -264,53 +257,7 @@ fn is_game_installed() -> bool {
     install_game_path.exists()
 }
 
-/*
-#[tauri::command]
-fn create_game_install(params: HashMap<String, String>) -> String {
-    let game_version_data = params.get("filepath").unwrap();
-    let install_path = params.get("install_path").unwrap();
-    let live_version = params.get("version").unwrap(); 
-    let version_details = params.get("version_details").unwrap(); 
 
-    let install_game_path = "D:/aaaaaaaaaa/game_install_config.json";
-    let game_version_file = format!("{}/game_version.json", game_version_data);
-    let directory_map_file = format!("{}/directory_map.json", game_version_data);
-
-    write_file(install_game_path, install_path).unwrap();
-    write_file(&directory_map_file, version_details).unwrap();
-    write_json_file(&game_version_file, &FileContents { version: live_version.to_string() }).unwrap();
-
-    String::from(game_version_data)
-}*/
-
-
-
-/*fn create_game_install(params: HashMap<String, String>) -> String {
-    let game_version_data = params.get("filepath").unwrap();
-    let install_path = params.get("install_path").unwrap();
-    let live_version = params.get("version").unwrap(); 
-    let version_details = params.get("version_details").unwrap(); 
-
-    let appdata_path = dirs::data_dir().unwrap();
-    let vodkagamelauncher_path = appdata_path.join("vodkagamelauncher");
-    let install_game_path = vodkagamelauncher_path.join("game_install_config.json");
-
-    let path = Path::new(install_game_path);
-    let parent = path.parent().ok_or_else(|| json!({"error": "Invalid path"}))?;
-    
-    // Create parent directories if they do not exist
-    fs::create_dir_all(parent).map_err(|err| json!({"error": format!("Failed to create directories: {}", err)}))?;
-
-    println!("Install game path create_install: {:?}", install_game_path);
-    write_file(install_game_path.to_str().unwrap(), install_path).unwrap();
-    //let game_version_file = format!("{}/game_version.json", game_version_data);
-    //let directory_map_file = format!("{}/directory_map.json", game_version_data);
-    
-    //write_file(&directory_map_file, version_details).unwrap();
-    //write_json_file(&game_version_file, &FileContents { version: live_version.to_string() }).unwrap();
-
-    String::from(game_version_data)
-}*/
 #[tauri::command]
 fn create_game_install(params: HashMap<String, String>) -> Result<(), Value> {
     let install_game_path = params.get("game_install_path").unwrap();
@@ -379,7 +326,7 @@ async fn select_directory() -> Option<String> {
     })
     .await;
 
-    
+    // did not work as i expected so i loop until we get feedback
     loop {
         match rx.try_recv() {
             Ok(selected_directory) => {
@@ -393,6 +340,16 @@ async fn select_directory() -> Option<String> {
 }
 
 
+
+/*
+   used to start the program
+   i originally wrote this to spawn with admin priv, but this could be a security issue if someone was to find offsets and inject into this function...
+   so in the rare case that you need to spawn the exe as an admin reach out to me on discord and i can give you the code required to run as elevated
+   weirdly during testing there was no UAC prompt which i would expect from spawning process as admin.. :|  again this is another reason i removed
+   from public build big potential security issues :( 
+    anyway my discord is: v0dka#2805
+    
+*/
 #[tauri::command]
 fn start_game(path: &str) {
     let output = Command::new(path)

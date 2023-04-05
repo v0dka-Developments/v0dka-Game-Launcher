@@ -159,23 +159,6 @@
     };
 
 
-
-
-  
-
-
-
-
-
-  const galleriaClass = computed(() => {
-      return ['custom-galleria', { fullscreen: fullScreen.value }];
-  });
-  const fullScreenIcon = computed(() => {
-      return `pi ${fullScreen.value ? 'pi-window-minimize' : 'pi-window-maximize'}`;
-  });
-
-
-
 const getSeverity = (status) => {
     switch (status) {
         case 'UPDATE':
@@ -312,27 +295,6 @@ async function promptGameInstallPath(current_version) {
       });
   });
 
-
-  /*const installPath = prompt('Please enter the game installation path:');
-  const gameInstallPath = {
-    install_path: installPath
-  };
-  const version_detail = await requestVersionDetails(current_version);
-
-  try {
-    const result = await invoke("create_game_install", {
-      params: {
-        filepath: installPath,
-        install_path: JSON.stringify(gameInstallPath),
-        version: current_version,
-        version_details: JSON.stringify(version_detail),
-      },
-    });
-    return result.toString();
-  } catch (err) {
-    toast.add({ severity: 'error', summary: 'Version Check', detail: "There was an error checking promp game install", life: 8000 });
-    return false;
-  }*/
 }
 
 
@@ -360,27 +322,6 @@ return new Promise((resolve, reject) => {
     });
 });
 
-
-/*const installPath = prompt('Please enter the game installation path:');
-const gameInstallPath = {
-  install_path: installPath
-};
-const version_detail = await requestVersionDetails(current_version);
-
-try {
-  const result = await invoke("create_game_install", {
-    params: {
-      filepath: installPath,
-      install_path: JSON.stringify(gameInstallPath),
-      version: current_version,
-      version_details: JSON.stringify(version_detail),
-    },
-  });
-  return result.toString();
-} catch (err) {
-  toast.add({ severity: 'error', summary: 'Version Check', detail: "There was an error checking promp game install", life: 8000 });
-  return false;
-}*/
 }
 
 // return the game install location json file
@@ -448,6 +389,7 @@ async function downloadFile(url, filepath,file) {
       });
   });
 }
+
 // validate the system files
 async function validate_files(rootPath,manifest) {
   
@@ -657,9 +599,7 @@ async function runGameInstallation() {
               } catch (error) {
                 toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
               }
-              //console.log(game_install_path);
-              //console.log(build_url);
-              //console.log(k);
+              
 
             }
             for (let k in file_check_obj['mismatched']){
@@ -668,8 +608,7 @@ async function runGameInstallation() {
               console.log("i am the total"+file_check_obj['total']);
               
               current_file.value = k;
-              //let res = await downloadFile(build_url,game_install_path);
-              //console.log(res);
+              
               try {
                 
                 let test = await downloadFile(build_url,game_install_path,k);
@@ -682,9 +621,7 @@ async function runGameInstallation() {
               } catch (error) {
                 toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
               }
-              //console.log(game_install_path);
-              //console.log(build_url);
-              //console.log(k);
+              
 
             }
             if(total_files.value == 0){
@@ -724,16 +661,10 @@ async function runGameInstallation() {
 
 onMounted(() => {
   
-  //console.log(isGameInstalled());
-  //console.log(isGameInstalled());
-  //runGameInstallation();
-
-  //test();
-  //check_version();
   
   runGameInstallation();
   PhotoService.getImages().then((data) => (images.value = data));
-  //bindDocumentListeners();
+  
   //loadData();
   // setTimeout(() => {
     // document.querySelector('.fade-in').classList.add('active');

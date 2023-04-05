@@ -7,8 +7,16 @@ import "primevue/resources/primevue.min.css";
 import 'primeicons/primeicons.css';
 
 import "./styles.css";
+
+// primeflex + theme.css -->
+// i was loading this from cdn but was having issues with cloudflare blocking request so we just
+// load it locally :D problem solved + faster loading anyway win win...
 import "./primeflex.css";
 import "./theme.css";
+
+
+
+
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from './router';

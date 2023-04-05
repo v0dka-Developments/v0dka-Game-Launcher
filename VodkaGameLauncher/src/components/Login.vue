@@ -59,6 +59,7 @@
   const { value: username, errorMessage: usernameErrorMessage } = useField('username', validateUsername);
   const { value: password, errorMessage: passwordErrorMessage } = useField('password', validatePassword);
   const toast = useToast();
+  const domain = "http://127.0.0.1:8090/"
   const body = document.querySelector('body');
 
 
@@ -82,7 +83,8 @@
   if (values.username && values.username.length > 0 && values.password && values.password.length > 0) {
     try{
     const client = await getClient();
-    const response = await client.post('http://localhost/testing/index.php', {
+    console.log(domain+'userlogin');
+    const response = await client.post(domain+'userlogin', {
       headers: {
         'Content-Type': 'application/json'
       },
@@ -107,30 +109,13 @@
     toast.add({ severity: 'error', summary: 'Login', detail: "unable to contact login server", life: 3000 });
   }
 
-    
-
-     // console.log(response);
-
-     // if (response === 'success') {
-      //  toast.add({ severity: 'success', summary: 'Login', detail: `You have successfully been logged in `, life: 30000000 });
-      //  setTimeout(() => {
-       //   document.querySelector('.fade-out').classList.add('active');
-       // }, 2000);
-       // setTimeout(() => {
-       //   router.push({ name: 'loggedin' });
-       // }, 3000);
-      //} else {
-      //  toast.add({ severity: 'error', summary: 'Login', detail: `Wrong username or password...`, life: 30000000 });
-     // }
-    //} catch (error) {
-    //  toast.add({ severity: 'error', summary: 'Login', detail: `Error: ${error}`, life: 30000000 });
-   // }
   }
 });
   
   onMounted(() => {
     setTimeout(() => {
       document.querySelector('.fade-in').classList.add('active');
+      /* enable this code when going live so people cant middle click */
       //const link = document.querySelector('a');
 
      // link.addEventListener('auxclick', (event) => {
@@ -141,28 +126,6 @@
     }, 1000);
   });
 
-  // Export the component
-  //export default LoginComponent;
-
-
-  
-  /*import { useToast } from "primevue/usetoast";
-  const toast = useToast();
-  
-  const showSuccess = () => {
-    toast.add({ severity: 'success', summary: 'Success Message', detail: 'Message Content', life: 3000 });
-  
-    // Redirect to logged_in.vue after 3 seconds
-    setTimeout(() => {
-      router.push({ name: 'loggedin' });
-    }, 3000);
-  };
-  
-  onMounted(() => {
-    setTimeout(() => {
-      showSuccess();
-    }, 3000); // Delay for 3 seconds
-  });*/
   </script>
 
 <style>

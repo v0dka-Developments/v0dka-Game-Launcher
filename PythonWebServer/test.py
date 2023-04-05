@@ -1,3 +1,6 @@
+### this can be deleted was just a test script
+### i threw together in python to test logic for converting to rust...
+
 import os
 import hashlib
 import json
