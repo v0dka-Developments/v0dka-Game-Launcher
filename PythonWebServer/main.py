@@ -315,6 +315,57 @@ def request_version_details():
         return "Error: give me a version"
 
 
+
+
+
+### example news for the app.. need to create view for this tomorrow...
+@app.route('/add_news',methods=['GET','POST'])
+def add_news():
+    if 'logged_in' in session and session['logged_in']:
+        if not os.path.exists('news.json'):
+            # Create an empty dictionary and write it to the news.json file
+            with open('news.json', 'w') as f:
+                json.dump({}, f)
+
+        # Load the existing JSON data from the file
+        with open('news.json', 'r') as f:
+            news_data = json.load(f)
+
+        # Add the new news item to the dictionary
+        news_item = {
+            'title': request.form['title'],
+            'description': request.form['description'],
+            'image': request.form['image']
+        }
+        news_data[len(news_data)+1] = news_item
+
+        # Write the updated JSON data back to the file
+        with open('news.json', 'w') as f:
+            json.dump(news_data, f)
+    else:
+        return redirect(url_for('control_me'))
+
+@app.route('/request_news',methods=['GET'])
+def request_news():
+    # Check if the news.json file exists
+    if not os.path.exists('news.json'):
+        return Response('No news', mimetype='text/plain')
+
+    # Load the existing JSON data from the file
+    with open('news.json', 'r') as f:
+        news_data = json.load(f)
+
+    # Get the last 5 news items
+    last_five_items = list(news_data.values())[-5:]
+
+    # Convert the last 5 news items to a JSON string
+    json_str = json.dumps(last_five_items)
+
+    # Return the JSON string as a Flask response
+    return Response(json_str, mimetype='application/json')
+
+
+
 ## login this should really be to another service but it is an example
 ## built into this package for a demo
 @app.route("/userlogin", methods=['POST'])
