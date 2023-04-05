@@ -12,7 +12,7 @@
 
       
           <div class="card flex justify-content-center galleria text-center main_image">
-              <Galleria ref="galleria" v-model:activeIndex="activeIndex" :value="images" :numVisible="5" containerStyle="width: 1500px" :containerClass="galleriaClass"
+              <Galleria ref="galleria" v-model:activeIndex="activeIndex" :value="images" :numVisible="5" containerStyle="width: 1000px;" :containerClass="galleriaClass"
                   :showThumbnails="showThumbnails" :showItemNavigators="true" :showItemNavigatorsOnHover="true" :circular="true" :autoPlay="true" :transitionInterval="8000">
                   <template #item="slotProps">
                       <img :src="slotProps.item.itemImageSrc" :alt="slotProps.item.alt" :style="[{ width: !fullScreen ? '100%' : '', display: !fullScreen ? 'block' : '' }]" />
@@ -40,7 +40,7 @@
             <div class="play_button" v-if="play_button == 'play'">
               <Button label="Play" icon="pi pi-play" severity="success" size="large" @click="PlayGame" />
             </div>
-            <div class="play_button" v-if="play_button == 'update'">
+            <div class="play_button pb-2" v-if="play_button == 'update'">
               <Button label="Updating" severity="warning" icon="pi pi-spinner" iconPos="left">
                 <span class="pi pi-spinner pi-spin"></span>  &nbsp Updating
                 
@@ -53,7 +53,7 @@
     </div>
     <div class="col-4 text-center">
       <div class="side_image">
-        <Image src="http://localhost/test_images/main.png" alt="Image" width="580"  />
+        <Image src="http://127.0.0.1:8090/static/main.png" alt="Image" width="580"  />
         Annoucements | Community Posts | Patch Notes
         <div class="py-2">
           Annoucement
@@ -102,13 +102,45 @@
   const showThumbnails = ref(false);
   const fullScreen = ref(false);
 
-
   const PhotoService = {
         getData() {
             return [
                 {
-                    itemImageSrc: 'http://localhost/test_images/first.png',
-                    thumbnailImageSrc: 'http://localhost/test_images/first.png',
+                    itemImageSrc: 'http://127.0.0.1:8090/static/1.png',
+                    thumbnailImageSrc: 'http://127.0.0.1:8090/static/1.png',
+                    alt: 'this is the content of the news article we are updating servers to do xyz and we are doing much more maintanance tasks to achieve better performance across the service infrastrucutre ',
+                    title: 'Title 1   '
+                },
+                {
+                    itemImageSrc: 'http://127.0.0.1:8090/static/2.png',
+                    thumbnailImageSrc: 'http://127.0.0.1:8090/static/2.png',
+                    alt: 'content 2',
+                    title: 'title 2   '
+                },
+                {
+                    itemImageSrc: 'http://127.0.0.1:8090/static/3.png',
+                    thumbnailImageSrc: 'http://127.0.0.1:8090/static/3.png',
+                    alt: 'content 3',
+                    title: 'title 3   '
+                },
+                
+                
+               
+            ];
+        },
+
+        getImages() {
+            return Promise.resolve(this.getData());
+        }
+    }
+
+/*
+  const PhotoService = {
+        getData() {
+            return [
+                {
+                    itemImageSrc: 'http://127.0.0.1:8090/static/2000-1000.png',
+                    thumbnailImageSrc: 'http://127.0.0.1:8090/static/2000-1000.png',
                     alt: 'this is the content of the news article we are updating servers to do xyz and we are doing much more maintanance tasks to achieve better performance across the service infrastrucutre ',
                     title: 'Title 1'
                 },
@@ -156,7 +188,7 @@
         getImages() {
             return Promise.resolve(this.getData());
         }
-    };
+    };*/
 
 
 const getSeverity = (status) => {
@@ -414,8 +446,9 @@ async function validate_files(rootPath,manifest) {
 async function PlayGame(){
   let install_location = await getGameInstallLocation();
   console.log(install_location['game']);
-  console.log("i am clicked");
-  let demo = "D:\\steam\\steamapps\\common\\Pummel Party\\PummelParty.exe"
+ 
+  // live version we use install_location['game'] but for testing i use pummel party :) 
+  let demo = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Pummel Party\\PummelParty.exe"
   invoke('start_game', {path:demo})
       .then((result) => {
         // result will contain the selected directory path
