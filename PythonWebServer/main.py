@@ -8,6 +8,7 @@ import json
 import datetime
 import config
 import re
+import uuid
 
 
 
@@ -17,6 +18,7 @@ UPLOAD_FOLDER = current_directory + "/" + config.Zip_Upload_Folder + "/"
 VERSION_FOLDER = current_directory + "/" + config.Versions + "/"
 VERSION_FILE = current_directory +"/"+config.Version_Json
 ALLOWED_EXTENSIONS = {'zip'}
+ALLOWED_EXTENSIONS_IMAGES = {'png'}
 
 app = Flask(__name__)
 app.static_folder = 'static'
@@ -37,11 +39,15 @@ def is_valid_version(version):
     VERSION_REGEX = r'^v\d+-\d+-\d+$'
     return bool(re.match(VERSION_REGEX, version))
 
-
-# function for checking allowed file types for upload in admin panel
+# function for checking allowed file types for image upload in admin panel
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# function for checking allowed file types for upload in admin panel
+def allowed_file_images(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS_IMAGES
 # function for us to find the most recent version by folder name
 def get_latest_version(directory):
     versions = []
@@ -237,7 +243,10 @@ def set_version():
     else:
         return redirect(url_for('control_me'))
 
-
+@app.route("/logout")
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for("control_me"))
 
 
 #
@@ -363,6 +372,96 @@ def request_news():
 
     # Return the JSON string as a Flask response
     return Response(json_str, mimetype='application/json')
+
+
+
+@app.route('/news_feed',methods=['GET','POST'])
+def news_feed():
+    if 'logged_in' in session and session['logged_in']:
+        options = ""
+        if os.path.exists('news.json'):
+            with open('news.json', 'r') as f:
+                options = json.load(f)
+        if request.method == "POST":
+          if request.form.get("req_type") and request.form.get("req_type") == "create":
+              print("im here for create")
+              if 'image' not in request.files:
+                  print("there is no image submitted")
+                  flash("failed select an image file please")
+                  return render_template("news_feed.html",options=options)
+              file = request.files['image']
+              if file.filename == '':
+                  print("i made it here for no filename")
+                  flash("failed to select file please try again")
+                  return render_template("news_feed.html",options=options)
+              if file and allowed_file_images(file.filename):
+                  print("i made it here for success")
+                  file_extension = file.filename.split('.')[-1]
+                  new_filename = secure_filename(file.filename).replace('.png', '', 1) + "-" + str(uuid.uuid4()) + '.' + file_extension
+                  file.filename = new_filename
+                  # save the file to the static folder
+                  file.save(os.path.join(current_directory+"/static", new_filename))
+
+                  if not os.path.exists('news.json'):
+                      # Create an empty dictionary and write it to the news.json file
+                      with open('news.json', 'w') as f:
+                          json.dump({}, f)
+
+                  # Load the existing JSON data from the file
+                  with open('news.json', 'r') as f:
+                      news_data = json.load(f)
+
+                  # Add the new news item to the dictionary
+                  news_item = {
+                      'title': request.form['title'],
+                      'description': request.form['content'],
+                      'image': new_filename
+                  }
+                  news_data[len(news_data) + 1] = news_item
+
+                  # Write the updated JSON data back to the file
+                  with open('news.json', 'w') as f:
+                      json.dump(news_data, f)
+
+                  flash("file succesfully uploaded and content successfully added")
+                  return render_template("news_feed.html",options=news_data)
+
+          if request.form.get("req_type") and request.form.get("req_type") == "delete":
+            if options != "":
+                key = request.form['delete_news']
+                with open('news.json') as f:
+                    data = json.load(f)
+                if key in data:
+                    del data[key]
+                    with open('news.json', 'w') as f:
+                        json.dump(data, f)
+                    message = f"News item {key} has been deleted."
+                else:
+                    message = f"News item {key} not found."
+
+                if os.path.exists('news.json'):
+                    with open('news.json', 'r') as f:
+                        options = json.load(f)
+                flash(message)
+                return render_template('news_feed.html',options=options)
+          if request.form.get("req_type") and request.form.get("req_type") == "modify":
+              for key in options.keys():
+                  if key == request.form.get("modify_news"):
+                      if request.form.get("title") and request.form.get("content"):
+
+                          # Update the JSON for the key with the new title and content
+                          options[key]["title"] = request.form.get("title")
+                          options[key]["content"] = request.form.get("description")
+                          # Write the updated JSON to a file
+                          with open('news.json', 'w') as f:
+                              json.dump(options, f)
+                          return redirect(url_for('news_feed'))
+                      else:
+                          return redirect(url_for('news_feed', modify="start", title=options[key]["title"], content=options[key]["description"]))
+
+        return render_template("news_feed.html",options=options)
+    else:
+        return redirect(url_for('control_me'))
 
 
 

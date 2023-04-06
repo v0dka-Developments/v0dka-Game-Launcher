@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                <h1 class="h2">News Feed</h1>
+
+            </div>
+
+
+            <div class="jumbotron">
+                <div class="text-center pb-5">
+                    <div class="btn-group" role="group" aria-label="Basic example">
+                      <button type="button" class="btn btn-secondary" id="create_button">Create</button>
+                      <button type="button" class="btn btn-secondary" id="delete_button">Delete</button>
+                      <button type="button" class="btn btn-secondary" id="modify_button">Modify</button>
+                    </div>
+                </div>
+                <div class="container pt-5" id="main">
+
+                    <p class="lead">welcome to the news feed here you can control the news data for your client application
+                    </p>
+                     {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    {% for message in messages %}
+                    {{ message }}
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                </div>
+                <div class="container pt-5" id="create">
+
+                    <p class="lead">Create a new article
+                    </p>
+
+                    <form enctype="multipart/form-data" method="post" >
+                        <input type="hidden" name="req_type" value="create">
+                      <div class="form-group">
+                        <label >Enter Title</label>
+                        <input type="text" class="form-control" name="title" placeholder="Enter the title of your news post">
+                        <small class="form-text text-muted">This should be short and sweet.</small>
+                      </div>
+                      <div class="form-group">
+                         <div class="form-group">
+                            <label >Your news content</label>
+                            <textarea name="content" class="form-control" rows="3"></textarea>
+                             <small class="form-text text-muted">html tags will be stripped plain text only...</small>
+                          </div>
+                      </div>
+                      <div class="form-group">
+                        <div class="input-group mb-3">
+                          <div class="custom-file">
+                            <input type="file" name="image" class="custom-file-input">
+                            <label class="custom-file-label">Select Your Image</label>
+
+                          </div>
+                        </div>
+                           <small class="form-text text-muted">images should be sized x by x</small>
+                      </div>
+                      <div class="text-center pt-5">
+                          <button type="submit" class="btn btn-primary">Submit</button>
+                      </div>
+                    </form>
+
+                </div>
+
+                <div class="container pt-5" id="delete">
+
+                    <p class="lead">delete a news article
+                    </p>
+
+                    <form method="post" >
+                      <div class="form-group">
+
+                        <label for="exampleFormControlSelect1">Delete news article</label>
+                        <input type="hidden" name="req_type" value="delete">
+                         <select class="form-control" id="news" name="delete_news">
+                          {% for key, value in options.items() %}
+                            <option value="{{ key }}">{{ value['title'] }}</option>
+                          {% endfor %}
+                        </select>
+
+
+
+                      </div>
+
+                      <div class="text-center pt-5">
+                          <button type="submit" class="btn btn-primary">Submit</button>
+                      </div>
+                    </form>
+
+                </div>
+
+                 <div class="container pt-5" id="modify">
+
+                    <p class="lead">Modify a news article
+                    </p>
+
+                    <form method="post" id="modify_form" >
+                      <div class="form-group">
+                          <input type="hidden" name="req_type" value="modify">
+                        <label for="exampleFormControlSelect1">Example select</label>
+                         <select class="form-control"  name="modify_news">
+                          {% for key, value in options.items() %}
+                            <option value="{{ key }}">{{ value['title'] }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                        <div id="show_additional">
+
+                      <div class="form-group">
+                        <label >Enter Title</label>
+                        <input type="text" id="title" class="form-control" name="title" placeholder="Enter the title of your news post">
+                        <small class="form-text text-muted">This should be short and sweet.</small>
+                      </div>
+                      <div class="form-group">
+                         <div class="form-group">
+                            <label >Your news content</label>
+                            <textarea name="content" id="content" class="form-control" rows="3"></textarea>
+                             <small class="form-text text-muted">html tags will be stripped plain text only...</small>
+                          </div>
+                      </div>
+                      <div class="form-group">
+                        <div class="input-group mb-3">
+                          <div class="custom-file">
+                            <input type="file" name="image" class="custom-file-input">
+                            <label class="custom-file-label">Select Your Image</label>
+
+                          </div>
+                        </div>
+                           <small class="form-text text-muted">images should be sized x by x</small>
+                      </div>
+                      </div>
+
+                      <div class="text-center pt-5">
+                          <button type="submit" class="btn btn-primary">Submit</button>
+                      </div>
+                    </form>
+
+                </div>
+
+            </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script>
+
+    $( document ).ready(function() {
+        $.urlParam = function(name){
+            var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+            if (results==null) {
+               return null;
+            }
+            return decodeURI(results[1]) || 0;
+        }
+        function hide(){
+           $("#create").hide();
+           $("#delete").hide();
+           $("#modify").hide();
+           $("#show_additional").hide();
+        }
+        if($.urlParam('modify') == "start"){
+            hide();
+            if($.urlParam('title')){
+                $("#show_additional").show();
+                $("#title").val($.urlParam('title'));
+                $("#content").val($.urlParam('content'));
+            }
+            $("#modify").show();
+        }else{
+            hide();
+        }
+
+        $("#create_button").click(function() {
+            hide();
+            $("#create").show();
+        });
+        $("#modify_button").click(function() {
+            hide();
+            $("#modify").show();
+        });
+        $("#delete_button").click(function() {
+            hide();
+            $("#delete").show();
+        });
+        $( "#modify_form" ).submit(function( event ) {
+
+          alert( "Handler for .submit() called." );
+
+        });
+
+
+
+
+    });
+
+
+
+</script>
+
+
+{% endblock %}
