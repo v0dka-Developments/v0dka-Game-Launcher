@@ -70,9 +70,23 @@
         "decorations": false,
         "fullscreen": false,
         "resizable": false,
+        "center": true,
+        "transparent": true,
         "title": "Vodka Game Launcher",
-        "width": 1500,
-        "height": 700
+        "visible": false,
+        "width": 1360,
+        "height": 720
+      },
+      {
+        "fullscreen": false,
+        "resizable": false,
+        "width": 800,
+        "height": 720,
+        "decorations": false,
+        "url": "../src/splashscreen.html",
+        "label": "splashscreen",
+        "center": true,
+        "transparent": true
       }
     ]
   }

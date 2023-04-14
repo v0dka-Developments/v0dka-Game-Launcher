@@ -34,7 +34,8 @@ use reqwest::Url;
 use futures::stream::StreamExt;
 use tauri::api::dialog::FileDialogBuilder;
 use dirs;
-
+use tauri::Manager;
+use window_shadows::set_shadow;
 
 /*
 
@@ -357,9 +358,25 @@ fn start_game(path: &str) {
     .expect("Failed to launch Notepad");
 }
 
+#[tauri::command]
+async fn close_splashscreen(window: tauri::Window) {
+  // Close splashscreen
+  if let Some(splashscreen) = window.get_window("splashscreen") {
+    splashscreen.close().unwrap();
+  }
+  // Show main window
+  window.get_window("main").unwrap().show().unwrap();
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![is_game_installed,create_game_install,validate_me,select_directory,download_me,get_game_install,start_game])
+    .setup(|app| {
+        let window = app.get_window("main").unwrap();
+        #[cfg(any(windows, target_os = "macos"))]
+        set_shadow(&window, true).unwrap();
+        Ok(())
+    })
+        .invoke_handler(tauri::generate_handler![is_game_installed,create_game_install,validate_me,select_directory,download_me,get_game_install,start_game,close_splashscreen])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

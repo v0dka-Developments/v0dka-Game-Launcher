@@ -24,4 +24,10 @@ async function AppClose(){
 .white_cross {
   fill: #ffffff; /* white color in hex format */
 }
+.titlebar {
+  background-color: rgba(212, 187, 187, 0.075);
+}
+.titlebar-button:hover {
+  background-color: rgba(255, 0, 0, 0.158);
+}
 </style>

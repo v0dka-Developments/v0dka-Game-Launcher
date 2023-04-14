@@ -1,18 +1,25 @@
 
 <template>
   <Toast />
+  <video autoplay loop>
+  <source src="../assets/aa.mp4" type="video/mp4">
+</video>
   <div class="grid fade-out">
-    <div class="col-fixed logo fillme" style="width:500px"></div>
     <div class="col">
       <div class="grid fade-in">
         <div class="col-12 text-center login-form">
           <div class="grid">
-            <div class="col-12"><h1>Vodka Game Launcher</h1></div>
+            <!-- <div class="col-12"><h1>Vodka Game Launcher</h1></div> -->
             <div class="col-12">
               <div class="grid">
                 <div class="col-3"></div>
                 <div class="col-6 ">
                   <div class="card flex justify-content-center center_login">
+                    <div class="login">
+                      <div class="logo2">
+                      <img src="../assets/logo2.png" alt="Logo2">
+                    </div>
+                      <div class="loginfo">
                     <form @submit="onSubmit" class="flex flex-column gap-2" style="width: 100%;">
                       <span class="p-float-label"> 
                         <InputText id="username" v-model="username" type="text" :class="{ 'p-invalid': usernameError }" aria-describedby="username-error" style="width: 100%;" autocomplete="off"/>
@@ -25,18 +32,21 @@
                         <label for="password">Password</label>
                       </span>
                       <small class="p-error" id="password-error">{{ passwordError || '&nbsp;' }}</small>
-
-                      
-                      <Button type="submit" severity="success" label="Submit" />
+                      <Button type="submit" severity="success" label="Log In" />
                     </form>
+                    <div class="footer">
+                    Developed by vodka
                   </div>
+                  </div>
+                  </div>
+                </div>
                 </div>
                 <div class="col-3"></div>
               </div>
             </div>
           </div>
           <div class="grid">
-            <div class="col-12 bottom">Developed by vodka 😀 ❤️</div>
+            <!-- <div class="col-12 bottom">Developed by vodka and Megu😀 ❤️</div> -->
           </div>
         </div>  
       </div>
@@ -132,7 +142,18 @@
 @import 'primeflex/primeflex.css';
 @import "primevue/resources/themes/lara-light-indigo/theme.css";    
 
+video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  min-height: 100%;
+  z-index: -1;
+}
 
+body {
+  background: transparent;
+}
 
 .fillme {
     display: flex;
@@ -181,4 +202,34 @@
   opacity: 0;
 }
 
+.login {
+  border-radius: 10px; /* Kenar yuvarlama değeri */
+  padding: 20px;
+  background-color: #181c1ca6;
+  margin: auto; /* Öğeyi yatayda ortalar */
+  width: 500px; /* Maksimum genişlik */
+  height: 400px;
+}
+
+.grid {
+  display: flex;
+  justify-content: center; /* İçerikleri yatayda ortala */
+  align-items: center; /* İçerikleri dikeyde ortala */
+  height: 100vh; /* Yükseklik ayarla */
+}
+.loginfo {
+  position: absolute;
+  bottom: 200px;
+  width: 455px;
+  padding-left: 0px;
+}
+
+.logo2 img {
+  width: 50px;
+  height: 70px;
+}
+
+.footer {
+  margin-top:  25px;
+}
 </style>

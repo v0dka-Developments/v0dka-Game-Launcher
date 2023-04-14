@@ -13,6 +13,7 @@
     "@tauri-apps/api": "^1.2.0",
     "@vee-validate/i18n": "^4.8.3",
     "@vee-validate/rules": "^4.8.4",
+    "pinia": "^2.0.33",
     "primeflex": "^3.3.0",
     "primeicons": "^6.0.1",
     "primevue": "^3.26.0",

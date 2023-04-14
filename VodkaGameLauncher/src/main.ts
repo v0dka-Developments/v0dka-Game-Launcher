@@ -117,8 +117,14 @@ import TreeSelect from 'primevue/treeselect';
 import TreeTable from 'primevue/treetable';
 import TriStateCheckbox from 'primevue/tristatecheckbox';
 import VirtualScroller from 'primevue/virtualscroller';
+import { invoke } from "@tauri-apps/api/tauri";
 
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        invoke('close_splashscreen')
+    }, 5000);
 
+})
 
 
 const app = createApp(App);
