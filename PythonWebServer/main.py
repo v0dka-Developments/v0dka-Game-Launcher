@@ -9,6 +9,7 @@ import datetime
 import config
 import re
 import uuid
+import tempfile
 
 
 
@@ -24,6 +25,8 @@ app = Flask(__name__)
 app.static_folder = 'static'
 app.secret_key = config.AppSecretKey
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# because i have no fuck space on my ssd :|
+tempfile.tempdir = UPLOAD_FOLDER
 
 ######################################################################
 
