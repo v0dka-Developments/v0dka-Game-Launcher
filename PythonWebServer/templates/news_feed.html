@@ -76,9 +76,11 @@
                         <label for="exampleFormControlSelect1">Delete news article</label>
                         <input type="hidden" name="req_type" value="delete">
                          <select class="form-control" id="news" name="delete_news">
+                         {% if options %}
                           {% for key, value in options.items() %}
                             <option value="{{ key }}">{{ value['title'] }}</option>
                           {% endfor %}
+                         {% endif %}
                         </select>
 
 
@@ -102,9 +104,11 @@
                           <input type="hidden" name="req_type" value="modify">
                         <label for="exampleFormControlSelect1">Example select</label>
                          <select class="form-control"  name="modify_news">
+                         {% if options %}
                           {% for key, value in options.items() %}
                             <option value="{{ key }}">{{ value['title'] }}</option>
                           {% endfor %}
+                           {% endif %}
                         </select>
                       </div>
                         <div id="show_additional">

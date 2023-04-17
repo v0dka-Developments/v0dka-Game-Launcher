@@ -384,18 +384,17 @@ def news_feed():
                 options = json.load(f)
         if request.method == "POST":
           if request.form.get("req_type") and request.form.get("req_type") == "create":
-              print("im here for create")
               if 'image' not in request.files:
-                  print("there is no image submitted")
+
                   flash("failed select an image file please")
                   return render_template("news_feed.html",options=options)
               file = request.files['image']
               if file.filename == '':
-                  print("i made it here for no filename")
+
                   flash("failed to select file please try again")
                   return render_template("news_feed.html",options=options)
               if file and allowed_file_images(file.filename):
-                  print("i made it here for success")
+
                   file_extension = file.filename.split('.')[-1]
                   new_filename = secure_filename(file.filename).replace('.png', '', 1) + "-" + str(uuid.uuid4()) + '.' + file_extension
                   file.filename = new_filename
@@ -457,6 +456,7 @@ def news_feed():
                               json.dump(options, f)
                           return redirect(url_for('news_feed'))
                       else:
+
                           return redirect(url_for('news_feed', modify="start", title=options[key]["title"], content=options[key]["description"]))
 
         return render_template("news_feed.html",options=options)
@@ -502,9 +502,13 @@ if __name__ == "__main__":
     build_exist = False
     version_exist = False
     version_file = False
+    news_exist = False
+
+
     build_directory = Path(current_directory + "/" + config.Zip_Upload_Folder)
     version_directory = Path(current_directory + "/" + config.Versions)
     version_file = Path(current_directory + "/"+config.Version_Json)
+    news_file = Path(current_directory + "/news.json")
     ## inital launch we make sure files exist that we need...
     if not version_file.is_file():
         print('\033[91m' + "Making Version File" + '\033[0m')
@@ -526,8 +530,17 @@ if __name__ == "__main__":
         os.mkdir(version_directory)
         version_exist = True
     else:
-        print("build directory exists")
+        print("version directory exists")
         version_exist = True
+    if not news_file.is_file():
+        print('\033[91m' + "news file does not exist making it now" + '\033[0m')
+
+        data = {}
+        with open(news_file, "w") as f:
+            json.dump(data, f)
+    else:
+        print("news file exists")
+        news_exist = True
 
 
     if version_exist and build_directory:
