@@ -3,7 +3,7 @@
 {% block content %}
 <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-                <h1 class="h2">News Feed</h1>
+                <h1 class="h2">Store Feed</h1>
 
             </div>
 
@@ -18,7 +18,7 @@
                 </div>
                 <div class="container pt-5" id="main">
 
-                    <p class="lead">welcome to the news feed here you can control the news data for your client application
+                    <p class="lead">welcome to the store feed here you can control the store data for your client application
                     </p>
                      {% with messages = get_flashed_messages() %}
                     {% if messages %}
@@ -31,19 +31,19 @@
                 </div>
                 <div class="container pt-5" id="create">
 
-                    <p class="lead">Create a new article
+                    <p class="lead">Create a Store article
                     </p>
 
                     <form enctype="multipart/form-data" method="post" >
-                        <input type="hidden" name="req_type" value="create">
+                        <input type="hidden" name="req_type2" value="create2">
                       <div class="form-group">
                         <label >Enter Title</label>
-                        <input type="text" class="form-control" name="title" placeholder="Enter the title of your news post">
+                        <input type="text" class="form-control" name="title" placeholder="Enter the title of your store post">
                         <small class="form-text text-muted">This should be short and sweet.</small>
                       </div>
                       <div class="form-group">
                          <div class="form-group">
-                            <label >Your news content</label>
+                            <label >Your store content</label>
                             <textarea name="content" class="form-control" rows="3"></textarea>
                              <small class="form-text text-muted">html tags will be stripped plain text only...</small>
                           </div>
@@ -67,15 +67,15 @@
 
                 <div class="container pt-5" id="delete">
 
-                    <p class="lead">delete a news article
+                    <p class="lead">Delete a Store article
                     </p>
 
                     <form method="post" >
                       <div class="form-group">
 
-                        <label for="exampleFormControlSelect1">Delete news article</label>
-                        <input type="hidden" name="req_type" value="delete">
-                         <select class="form-control" id="news" name="delete_news">
+                        <label for="exampleFormControlSelect1">Delete Store article</label>
+                        <input type="hidden" name="req_type2" value="delete">
+                         <select class="form-control" id="store" name="delete_store">
                          {% if options %}
                           {% for key, value in options.items() %}
                             <option value="{{ key }}">{{ value['title'] }}</option>
@@ -96,14 +96,14 @@
 
                  <div class="container pt-5" id="modify">
 
-                    <p class="lead">Modify a news article
+                    <p class="lead">Modify a store article
                     </p>
 
                     <form method="post" id="modify_form" >
                       <div class="form-group">
-                          <input type="hidden" name="req_type" value="modify">
+                          <input type="hidden" name="req_type2" value="modify">
                         <label for="exampleFormControlSelect1">Example select</label>
-                         <select class="form-control"  name="modify_news">
+                         <select class="form-control"  name="modify_store">
                          {% if options %}
                           {% for key, value in options.items() %}
                             <option value="{{ key }}">{{ value['title'] }}</option>
@@ -115,12 +115,12 @@
 
                       <div class="form-group">
                         <label >Enter Title</label>
-                        <input type="text" id="title" class="form-control" name="title" placeholder="Enter the title of your news post">
+                        <input type="text" id="title" class="form-control" name="title" placeholder="Enter the title of your store post">
                         <small class="form-text text-muted">This should be short and sweet.</small>
                       </div>
                       <div class="form-group">
                          <div class="form-group">
-                            <label >Your news content</label>
+                            <label >Your store content</label>
                             <textarea name="content" id="content" class="form-control" rows="3"></textarea>
                              <small class="form-text text-muted">html tags will be stripped plain text only...</small>
                           </div>

@@ -9,6 +9,7 @@ import datetime
 import config
 import re
 import uuid
+import tempfile
 
 
 
@@ -24,6 +25,8 @@ app = Flask(__name__)
 app.static_folder = 'static'
 app.secret_key = config.AppSecretKey
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# because i have no fuck space on my ssd :|
+tempfile.tempdir = UPLOAD_FOLDER
 
 ######################################################################
 
@@ -323,10 +326,138 @@ def request_version_details():
     else:
         return "Error: give me a version"
 
+@app.route('/store_feed',methods=['GET','POST'])
+def store_feed():
+    if 'logged_in' in session and session['logged_in']:
+        options = ""
+        if os.path.exists('store.json'):
+            with open('store.json', 'r') as f:
+                options = json.load(f)
+        if request.method == "POST":
+          if request.form.get("req_type2") and request.form.get("req_type2") == "create2":
+              if 'image' not in request.files:
+
+                  flash("failed select an image file please")
+                  return render_template("store_feed.html",options=options)
+              file = request.files['image']
+              if file.filename == '':
+
+                  flash("failed to select file please try again")
+                  return render_template("store_feed.html",options=options)
+              if file and allowed_file_images(file.filename):
+
+                  file_extension = file.filename.split('.')[-1]
+                  new_filename = secure_filename(file.filename).replace('.png', '', 1) + "-" + str(uuid.uuid4()) + '.' + file_extension
+                  file.filename = new_filename
+                  # save the file to the static folder
+                  file.save(os.path.join(current_directory+"/static", new_filename))
+
+                  if not os.path.exists('store.json'):
+                      # Create an empty dictionary and write it to the news.json file
+                      with open('store.json', 'w') as f:
+                          json.dump({}, f)
+
+                  # Load the existing JSON data from the file
+                  with open('store.json', 'r') as f:
+                      store_data = json.load(f)
+
+                  # Add the new news item to the dictionary
+                  store_item = {
+                      'title': request.form['title'],
+                      'description': request.form['content'],
+                      'image': new_filename
+                  }
+                  store_data[len(store_data) + 1] = store_item
+
+                  # Write the updated JSON data back to the file
+                  with open('store.json', 'w') as f:
+                      json.dump(store_data, f)
+
+                  flash("file succesfully uploaded and content successfully added")
+                  return render_template("store_feed.html",options=store_data)
+
+          if request.form.get("req_type2") and request.form.get("req_type2") == "delete":
+            if options != "":
+                key = request.form['delete_store']
+                with open('store.json') as f:
+                    data = json.load(f)
+                if key in data:
+                    del data[key]
+                    with open('store.json', 'w') as f:
+                        json.dump(data, f)
+                    message = f"News item {key} has been deleted."
+                else:
+                    message = f"News item {key} not found."
+
+                if os.path.exists('store.json'):
+                    with open('store.json', 'r') as f:
+                        options = json.load(f)
+                flash(message)
+                return render_template('store_feed.html',options=options)
+          if request.form.get("req_type2") and request.form.get("req_type2") == "modify":
+              for key in options.keys():
+                  if key == request.form.get("modify_store"):
+                      if request.form.get("title") and request.form.get("content"):
+
+                          # Update the JSON for the key with the new title and content
+                          options[key]["title"] = request.form.get("title")
+                          options[key]["content"] = request.form.get("description")
+                          # Write the updated JSON to a file
+                          with open('store.json', 'w') as f:
+                              json.dump(options, f)
+                          return redirect(url_for('store_feed'))
+                      else:
+
+                          return redirect(url_for('store_feed', modify="start", title=options[key]["title"], content=options[key]["description"]))
+
+        return render_template("store_feed.html",options=options)
+    else:
+        return redirect(url_for('control_me'))
+@app.route('/request_store',methods=['GET'])
+def request_store():
+    # Check if the news.json file exists
+    if not os.path.exists('store.json'):
+        return Response('No news', mimetype='text/plain')
+
+    # Load the existing JSON data from the file
+    with open('store.json', 'r') as f:
+        news_data = json.load(f)
+
+    # Get the last 5 news items
+    last_five_items = list(news_data.values())[-5:]
+
+    # Convert the last 5 news items to a JSON string
+    json_str = json.dumps(last_five_items)
+
+    # Return the JSON string as a Flask response
+    return Response(json_str, mimetype='application/json')
 
 
+@app.route('/add_store',methods=['GET','POST'])
+def add_store():
+    if 'logged_in' in session and session['logged_in']:
+        if not os.path.exists('store.json'):
+            # Create an empty dictionary and write it to the news.json file
+            with open('store.json', 'w') as f:
+                json.dump({}, f)
 
+        # Load the existing JSON data from the file
+        with open('store.json', 'r') as f:
+            store_data = json.load(f)
 
+        # Add the new news item to the dictionary
+        store_item = {
+            'title': request.form['title'],
+            'description': request.form['description'],
+            'image': request.form['image']
+        }
+        store_data[len(store_data)+1] = store_item
+
+        # Write the updated JSON data back to the file
+        with open('storer.json', 'w') as f:
+            json.dump(store_data, f)
+    else:
+        return redirect(url_for('control_me'))
 ### example news for the app.. need to create view for this tomorrow...
 @app.route('/add_news',methods=['GET','POST'])
 def add_news():
@@ -384,18 +515,17 @@ def news_feed():
                 options = json.load(f)
         if request.method == "POST":
           if request.form.get("req_type") and request.form.get("req_type") == "create":
-              print("im here for create")
               if 'image' not in request.files:
-                  print("there is no image submitted")
+
                   flash("failed select an image file please")
                   return render_template("news_feed.html",options=options)
               file = request.files['image']
               if file.filename == '':
-                  print("i made it here for no filename")
+
                   flash("failed to select file please try again")
                   return render_template("news_feed.html",options=options)
               if file and allowed_file_images(file.filename):
-                  print("i made it here for success")
+
                   file_extension = file.filename.split('.')[-1]
                   new_filename = secure_filename(file.filename).replace('.png', '', 1) + "-" + str(uuid.uuid4()) + '.' + file_extension
                   file.filename = new_filename
@@ -457,12 +587,12 @@ def news_feed():
                               json.dump(options, f)
                           return redirect(url_for('news_feed'))
                       else:
+
                           return redirect(url_for('news_feed', modify="start", title=options[key]["title"], content=options[key]["description"]))
 
         return render_template("news_feed.html",options=options)
     else:
         return redirect(url_for('control_me'))
-
 
 
 ## login this should really be to another service but it is an example
@@ -490,21 +620,23 @@ def userlogin():
 if __name__ == "__main__":
 
     start_message = '''
-
         \x1b[6;30;42m############################################################################\x1b[0m
         \x1b[6;30;42m#                       V0dka Public Game Manager                          #\x1b[0m
         \x1b[6;30;42m#                                Version 1.0.0                             #\x1b[0m
         \x1b[6;30;42m############################################################################\x1b[0m
-
     '''
 
     print(start_message)
     build_exist = False
     version_exist = False
     version_file = False
+    news_exist = False
+
+
     build_directory = Path(current_directory + "/" + config.Zip_Upload_Folder)
     version_directory = Path(current_directory + "/" + config.Versions)
     version_file = Path(current_directory + "/"+config.Version_Json)
+    news_file = Path(current_directory + "/news.json")
     ## inital launch we make sure files exist that we need...
     if not version_file.is_file():
         print('\033[91m' + "Making Version File" + '\033[0m')
@@ -526,8 +658,17 @@ if __name__ == "__main__":
         os.mkdir(version_directory)
         version_exist = True
     else:
-        print("build directory exists")
+        print("version directory exists")
         version_exist = True
+    if not news_file.is_file():
+        print('\033[91m' + "news file does not exist making it now" + '\033[0m')
+
+        data = {}
+        with open(news_file, "w") as f:
+            json.dump(data, f)
+    else:
+        print("news file exists")
+        news_exist = True
 
 
     if version_exist and build_directory:
