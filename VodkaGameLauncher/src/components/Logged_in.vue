@@ -41,7 +41,7 @@
                <Button label="Play" icon="pi pi-play" severity="success" size="large" @click="PlayGame" />
              </div>
              <div class="play_button" v-if="play_button == 'failed'">
-               <Button label="Failed to update" icon="pi pi-play" severity="danger" size="large" />
+               <Button label="Failed to update click to retry" severity="danger" size="large" />
              </div>
              <div class="play_button pb-2" v-if="play_button == 'update'">
                <Button label="Updating" severity="warning" icon="pi pi-spinner" iconPos="left">
@@ -56,7 +56,7 @@
      </div>
      <div class="col-4 text-center">
        <div class="side_image">
-         <Image src="http://127.0.0.1:8090/static/main.png" alt="Image" width="580"  />
+        <Image :src="`${domain}/static/main.png`" alt="Image" width="580" />
          Annoucements | Community Posts | Patch Notes
          <div class="py-2">
            Annoucement
@@ -107,20 +107,20 @@
          getData() {
              return [
                  {
-                     itemImageSrc: 'http://127.0.0.1:8090/static/1.png',
-                     thumbnailImageSrc: 'http://127.0.0.1:8090/static/1.png',
+                     itemImageSrc: domain+'/static/1.png',
+                     thumbnailImageSrc: domain+'/static/1.png',
                      alt: 'this is the content of the news article we are updating servers to do xyz and we are doing much more maintanance tasks to achieve better performance across the service infrastrucutre ',
                      title: 'Title 1   '
                  },
                  {
-                     itemImageSrc: 'http://127.0.0.1:8090/static/2.png',
-                     thumbnailImageSrc: 'http://127.0.0.1:8090/static/2.png',
+                     itemImageSrc: domain+'/static/2.png',
+                     thumbnailImageSrc: domain+'/static/2.png',
                      alt: 'content 2',
                      title: 'title 2   '
                  },
                  {
-                     itemImageSrc: 'http://127.0.0.1:8090/static/3.png',
-                     thumbnailImageSrc: 'http://127.0.0.1:8090/static/3.png',
+                     itemImageSrc: domain+'/static/3.png',
+                     thumbnailImageSrc: domain+'/static/3.png',
                      alt: 'content 3',
                      title: 'title 3   '
                  },
@@ -365,7 +365,7 @@
  async function requestVersionDetails(version) {
    try {
      const client = await getClient();
-     const { data } = await client.get(`http://127.0.0.1:8090/request_version_details?version=${version}`);
+     const { data } = await client.get(`${domain}/request_version_details?version=${version}`);
      return data;
    } catch (error) {
      toast.add({ severity: 'error', summary: 'Version Check', detail: "There was an issue contacting the version details server", life: 6000 });
@@ -411,6 +411,62 @@
        toast.add({ severity: 'error', summary: 'Game files check', detail: "There was an error checking game files:"+err, life: 8000 });
    }
  }
+
+
+// function to iterate over the missing file object
+
+async function missing_missmatched(liveVersion,file_check_obj,installPath){
+  console.log(liveVersion);
+  console.log(file_check_obj);
+  console.log(installPath);
+  for (let k in file_check_obj['missing']){
+      let build_url = domain+"download?version="+liveVersion+"&filename="+k
+      let game_install_path = installPath+"/"+k; 
+      console.log("i am the total"+file_check_obj['total']);
+      
+      current_file.value = k;
+      //let res = await downloadFile(build_url,game_install_path);
+      //console.log(res);
+      try {
+        
+        let test = await downloadFile(build_url,game_install_path,k);
+        if (test === null) {
+          total_files.value = total_files.value - 1;
+          console.log("success");
+        } else {
+          console.log("failure");
+        }
+      } catch (error) {
+        toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
+      }
+      
+    }
+  for (let k in file_check_obj['mismatched']){
+      let build_url = domain+"download?version="+liveVersion+"&filename="+k
+      let game_install_path = installPath+"/"+k; 
+      console.log("i am the total"+file_check_obj['total']);
+      
+      current_file.value = k;
+      
+      try {
+        
+        let test = await downloadFile(build_url,game_install_path,k);
+        if (test === null) {
+          total_files.value = total_files.value - 1;
+          console.log("success");
+        } else {
+          console.log("failure");
+        }
+      } catch (error) {
+        toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
+      }            
+   }
+
+  return ("finished this function lets go");
+}
+
+
+
  async function PlayGame(){
    let install_location = await getGameInstallLocation();
    console.log(install_location['game']);
@@ -451,8 +507,6 @@
          toast.add({ severity: 'success', summary: 'Version Check', detail: "Server Online woo :)", life: 8000 });
        }
        
-       console.log(liveVersion);
-       console.log("i am result for new install: "+isNewInstall);
        // false game_install_config does not exist.. full install with path 
        // true means game file exist validate the files and continue...
        // because it returns a string and not a bool look for string of true :| dont know how to convert types in crappy JS
@@ -461,81 +515,36 @@
          let install_location = await getGameInstallLocation();
          console.log(install_location);
          console.log(install_location['game']);
+         current_file.value = "Fetching patching details";
          if (install_location['game'] && install_location['game_dir'] && install_location['version']){
+           
            let manifest = await requestVersionDetails(liveVersion);
            let manifest_size = Object.keys(manifest);
            if (manifest_size.length == 0) {
-             console.log("manifest empty");
+             play_button.value="failed";
+             current_file.value = "";
              toast.add({ severity: 'error', summary: 'Version Check', detail: "Error with manifest", life: 8000 });
            } else {
-             console.log(install_location['game_dir']);
              let file_check = await validate_files(install_location['game_dir'],JSON.stringify(manifest));
              let file_check_obj = JSON.parse(file_check);
              total_files.value = file_check_obj['total'];
              current_file.value = "validating files";
+
+             while(total_files.value > 0){
+                 console.log("im executing"+total_files);
+                 let fun = await missing_missmatched(liveVersion,file_check_obj,install_location['game_dir']);
+                 console.log(fun);
+                }
              // everything success perfect... show button
              if(total_files.value == 0){
                  current_file.value = "File validation complete everything is upto date";
                  setTimeout(() => {
                  play_button.value = "play"
-                 }, 2000); // set the timeout to 5 seconds (5000 milliseconds)
+                 }, 2000); // set the timeout to 2 seconds (2000 milliseconds)
                  
                  setTimeout(() => {
                  current_file.value = '';
                  }, 5000); // set the timeout to 5 seconds (5000 milliseconds)
-             }else{
-               // lets tell user how many files we need..
-               current_file.value = "Files needing updated:"+total_files.value;
-               for (let k in file_check_obj['missing']){
-                 let build_url = domain+"download?version="+liveVersion+"&filename="+k
-                 let game_install_path = install_location['game_dir']+"/"+k; 
-                 current_file.value = k;
-                 try {
-                     let test = await downloadFile(build_url,game_install_path,k);
-                     if (test === null) {
-                       total_files.value = total_files.value - 1;
-                       console.log("success");
-                     } else {
-                       console.log("failure");
-                     }
-                   } catch (error) {
-                     toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
-                   }
-                 }
-               for (let k in file_check_obj['mismatched']){
-                 let build_url = domain+"download?version="+liveVersion+"&filename="+k
-                 let game_install_path = install_location['game_dir']+"/"+k; 
-                 current_file.value = k;
-                 try {
-                   let test = await downloadFile(build_url,game_install_path,k);
-                   if (test === null) {
-                     total_files.value = total_files.value - 1;
-                     console.log("success");
-                   } else {
-                     console.log("failure");
-                   }
-                 } catch (error) {
-                   toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
-                 }
-               }
-               if(total_files.value == 0){
-                 total_files.value = 0;
-                 current_file.value = "download has complete doing filecheck validation";
-                 file_check = await validate_files(install_location['game_dir'],JSON.stringify(manifest));
-                 file_check_obj = JSON.parse(file_check);
-                 let new_check = file_check_obj['total'];
-                 if(new_check == 0){
-                     current_file.value = "everything upto date woo!";
-                     play_button.value = "play"
-                     setTimeout(() => {
-                       current_file.value = '';
-                     }, 5000); // set the timeout to 5 seconds (5000 milliseconds)
-                 }else{
-                   console.log("does not match");
-                 }
-               }else{
-                 console.log("something went wrong");
-               }
              }
            }
          }else{
@@ -565,6 +574,7 @@
            
            
            if(installPath && installPath.length > 1){
+           
              // build full game path
              let full_game_path = installPath+"/"+exe_path
              // covert slashes to correct slashes
@@ -576,70 +586,29 @@
              let file_check_obj = JSON.parse(file_check);
              total_files.value = file_check_obj['total'];
              //download?version=v1-13-5&filename=test/bin/im_bina.txt
-             for (let k in file_check_obj['missing']){
-               let build_url = domain+"download?version="+liveVersion+"&filename="+k
-               let game_install_path = installPath+"/"+k; 
-               console.log("i am the total"+file_check_obj['total']);
-               
-               current_file.value = k;
-               //let res = await downloadFile(build_url,game_install_path);
-               //console.log(res);
-               try {
-                 
-                 let test = await downloadFile(build_url,game_install_path,k);
-                 if (test === null) {
-                   total_files.value = total_files.value - 1;
-                   console.log("success");
-                 } else {
-                   console.log("failure");
-                 }
-               } catch (error) {
-                 toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
-               }
-               
-             }
-             for (let k in file_check_obj['mismatched']){
-               let build_url = domain+"download?version="+liveVersion+"&filename="+k
-               let game_install_path = installPath+"/"+k; 
-               console.log("i am the total"+file_check_obj['total']);
-               
-               current_file.value = k;
-               
-               try {
-                 
-                 let test = await downloadFile(build_url,game_install_path,k);
-                 if (test === null) {
-                   total_files.value = total_files.value - 1;
-                   console.log("success");
-                 } else {
-                   console.log("failure");
-                 }
-               } catch (error) {
-                 toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+k+" error:"+error, life: 8000 });
-               }
-               
-             }
+             current_file.value = "validating files";
+
+             while(total_files.value > 0){
+                 console.log("im executing"+total_files);
+                 let fun = await missing_missmatched(liveVersion,file_check_obj,installPath);
+                 console.log(fun);
+                }
+             // everything success perfect... show button
              if(total_files.value == 0){
-               total_files.value = 0;
-               current_file.value = "download has complete doing filecheck validation";
-               file_check = await validate_files(installPath,JSON.stringify(manifest));
-               file_check_obj = JSON.parse(file_check);
-               let new_check = file_check_obj['total'];
-               if(new_check == 0){
-                   current_file.value = "everything upto date woo!";
-                   play_button.value = "play"
-                   setTimeout(() => {
-                     current_file.value = '';
-                   }, 5000); // set the timeout to 5 seconds (5000 milliseconds)
-               }else{
-                 console.log("does not match");
-               }
-             }else{
-               console.log("something went wrong");
+                 current_file.value = "File validation complete everything is upto date";
+                 setTimeout(() => {
+                 play_button.value = "play"
+                 }, 2000); // set the timeout to 2 seconds (2000 milliseconds)
+                 
+                 setTimeout(() => {
+                 current_file.value = '';
+                 }, 5000); // set the timeout to 5 seconds (5000 milliseconds)
              }
-             
-             
+
+
             
+           }else{
+            toast.add({ severity: 'error', summary: 'Install path', detail: "Not a valid install path", life: 8000 });
            }
            
          }
