@@ -40,6 +40,9 @@
              <div class="play_button" v-if="play_button == 'play'">
                <Button label="Play" icon="pi pi-play" severity="success" size="large" @click="PlayGame" />
              </div>
+             <div class="play_button" v-if="play_button == 'failed'">
+               <Button label="Failed to update" icon="pi pi-play" severity="danger" size="large" />
+             </div>
              <div class="play_button pb-2" v-if="play_button == 'update'">
                <Button label="Updating" severity="warning" icon="pi pi-spinner" iconPos="left">
                  <span class="pi pi-spinner pi-spin"></span>  &nbsp Updating
@@ -383,6 +386,7 @@
        .catch((err) => {
          // handle the error
          //console.error(err);
+         //total_files = 0;
          toast.add({ severity: 'error', summary: 'Version Download', detail: "file:"+file+" "+JSON.stringify(err), life: 32000 });
          reject(err); // reject the Promise with the error
        });

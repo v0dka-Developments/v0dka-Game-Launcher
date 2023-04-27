@@ -14,9 +14,10 @@ imports
 
 */
 use std::fs;
-use std::path::Path;
 use std::fmt::Write;
 use std::process::Command;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use std::collections::HashMap;
 
@@ -144,49 +145,62 @@ fn compare_json_objects(json1: &Value, json2: &Value) -> ComparisonResult {
 }
 
 
+
+
 fn generate_directory_structure(directory_path: &Path, parent_path: &str) -> HashMap<String, String> {
-    let mut result = HashMap::new();
+    let result = Arc::new(Mutex::new(HashMap::new()));
 
-    for item in directory_path.read_dir().expect("Failed to read directory") {
-        if let Ok(item) = item {
-            let item_path = item.path();
-            let item_name = item.file_name().to_string_lossy().to_string();
+    let handle = std::thread::spawn({
+        let result = Arc::clone(&result);
+        let directory_path = directory_path.to_owned();
+        let parent_path = parent_path.to_owned();
 
-            if item_path.is_file() {
-                if item_name == "directory_map.json" || item_name == "game_version.json" || item_name == "game_install_config.json" {
-                    continue; // Skip these files
-                }
+        move || {
+            for item in directory_path.read_dir().expect("Failed to read directory") {
+                if let Ok(item) = item {
+                    let item_path = item.path();
+                    let item_name = item.file_name().to_string_lossy().to_string();
 
-                let hash = format!("{:x}", md5::compute(fs::read(&item_path).unwrap()));
+                    if item_path.is_file() {
+                        if item_name == "directory_map.json" || item_name == "game_version.json" || item_name == "game_install_config.json" {
+                            continue; // Skip these files
+                        }
 
-                let mut file_path = String::new();
-                if let Some(parent) = parent_path.strip_prefix('/') {
-                    write!(file_path, "{}/{}", parent, item_name).expect("Failed to write file path");
-                } else {
-                    write!(file_path, "{}", item_name).expect("Failed to write file path");
-                }
+                        let hash = format!("{:x}", md5::compute(fs::read(&item_path).unwrap()));
 
-                result.insert(file_path, hash);
-            } else if item_path.is_dir() {
-                let subdirectory = generate_directory_structure(&item_path, &item_name);
+                        let mut file_path = String::new();
+                        if let Some(parent) = parent_path.strip_prefix('/') {
+                            write!(file_path, "{}/{}", parent, item_name).expect("Failed to write file path");
+                        } else {
+                            write!(file_path, "{}", item_name).expect("Failed to write file path");
+                        }
 
-                for (file_path, hash) in subdirectory {
-                    let mut full_file_path = String::new();
-                    if let Some(parent) = parent_path.strip_prefix('/') {
-                        write!(full_file_path, "{}/{}", parent, item_name).expect("Failed to write file path");
-                    } else {
-                        write!(full_file_path, "{}", item_name).expect("Failed to write file path");
+                        result.lock().unwrap().insert(file_path, hash);
+                    } else if item_path.is_dir() {
+                        let subdirectory = generate_directory_structure(&item_path, &item_name);
+
+                        for (file_path, hash) in subdirectory {
+                            let mut full_file_path = String::new();
+                            if let Some(parent) = parent_path.strip_prefix('/') {
+                                write!(full_file_path, "{}/{}", parent, item_name).expect("Failed to write file path");
+                            } else {
+                                write!(full_file_path, "{}", item_name).expect("Failed to write file path");
+                            }
+                            write!(full_file_path, "/{}", file_path).expect("Failed to write file path");
+
+                            result.lock().unwrap().insert(full_file_path, hash);
+                        }
                     }
-                    write!(full_file_path, "/{}", file_path).expect("Failed to write file path");
-
-                    result.insert(full_file_path, hash);
                 }
             }
         }
-    }
+    });
 
-    result
+    handle.join().expect("Failed to join thread");
+
+    Arc::try_unwrap(result).unwrap().into_inner().unwrap()
 }
+
 
 /*
 
@@ -209,13 +223,14 @@ async fn download_me(url: &str, install_path: &str) -> Result<(), Value> {
     // Create parent directories if they do not exist
     fs::create_dir_all(parent).map_err(|err| json!({"error": format!("Failed to create directories: {}", err)}))?;
     
-    let mut file = tokio::fs::File::create(path).await.map_err(|err| json!({"error": err.to_string()}))?;
+    let temp_path = path.with_extension("temp"); // create temporary file path
+    let mut temp_file = tokio::fs::File::create(&temp_path).await.map_err(|err| json!({"error": err.to_string()}))?;
     let mut content = response.bytes_stream();
     let mut buffer = vec![0u8; BUFFER_SIZE];
 
     while let Some(chunk) = content.next().await {
         let chunk = chunk.map_err(|err| json!({"error": err.to_string()}))?;
-        file.write_all(&chunk).await.map_err(|err| json!({"error": err.to_string()}))?;
+        temp_file.write_all(&chunk).await.map_err(|err| json!({"error": err.to_string()}))?;
 
         // Write to buffer instead of concatenating to a string
         buffer.extend_from_slice(&chunk);
@@ -224,16 +239,22 @@ async fn download_me(url: &str, install_path: &str) -> Result<(), Value> {
 
     if String::from_utf8_lossy(&buffer).contains("File Must be removed") {
         println!("File must be removed {}", install_path.to_string());
+        //tokio::fs::remove_file(&install_path).await.map_err(|err| json!({"error": format!("Failed to remove file: {}", err)}))?;
         tokio::fs::remove_file(path).await.map_err(|err| json!({"error": format!("Failed to remove file: {}", err)}))?;
         //return Err(json!({"error": "File must be removed"}));
+    } else {
+        // Rename temporary file to final path
+        tokio::fs::rename(&temp_path, &path).await.map_err(|err| json!({"error": format!("Failed to move file: {}", err)}))?;
     }
 
     Ok(())
 }
 
 
+
 #[tauri::command]
-fn validate_me(params: HashMap<String, String>) -> String {
+async fn validate_me(params: HashMap<String, String>) -> String {
+    
     let root_path = params.get("root_path").unwrap();
     let json_string = params.get("json_string").unwrap();
     let directory_structure = generate_directory_structure(Path::new(root_path), "");
@@ -242,7 +263,7 @@ fn validate_me(params: HashMap<String, String>) -> String {
     let json_value: Value = serde_json::from_str(&json_string).unwrap();
     let diff = compare_json_objects(&directory_structure_value, &json_value);
     let diff_json = serde_json::to_string(&diff).unwrap();
-    diff_json
+    diff_json // return the value of `diff_json`
 }
 
 
