@@ -75,7 +75,6 @@
                        </div>
                    </template>
                </Galleria>
-<<<<<<< HEAD
                <div class=slogan>
                 <Image src="./src/assets/patch.png" alt="Image" width="415" />
                 <Image src="./src/assets/Mainte.png" alt="Image" width="415" />
@@ -183,56 +182,6 @@
 
 </body>
 
-=======
-           </div>
-           
-           
-           <div class="col-12">
-             <div class="play_button" v-if="play_button == 'play'">
-               <Button label="Play" icon="pi pi-play" severity="success" size="large" @click="PlayGame" />
-             </div>
-             <div class="play_button" v-if="play_button == 'failed'">
-               <Button label="Failed to update click to retry" severity="danger" size="large" />
-             </div>
-             <div class="play_button pb-2" v-if="play_button == 'update'">
-               <Button label="Updating" severity="warning" icon="pi pi-spinner" iconPos="left">
-                 <span class="pi pi-spinner pi-spin"></span>  &nbsp Updating
-                 
-               </Button>
-             </div>
-           </div>
-         
-           
-         
-     </div>
-     <div class="col-4 text-center">
-       <div class="side_image">
-        <Image :src="`${domain}/static/main.png`" alt="Image" width="580" />
-         Annoucements | Community Posts | Patch Notes
-         <div class="py-2">
-           Annoucement
-         </div>
-         <div class="py-6">
-           blah blah im content blah blah blah woo i have more content blah blah blah blah blah
-         </div>
-       </div>
-     </div>
-       
-     <div class="col-12 text-center" v-if="current_file">
-       <div class="py-5" v-if="total_files > 0">
-         total files left {{ total_files }}    Current Download: {{ current_file }}
-         <ProgressBar mode="indeterminate" style="height: 6px; width:1650px; transform: translate(-10px);" ></ProgressBar>
-       </div>
-       <div class="py-5" v-if="total_files == 0 || total_files == ''">
-         {{ current_file }} 
-         <ProgressBar mode="indeterminate" style="height: 6px; width:1650px; transform: translate(-10px);" ></ProgressBar>
-       </div>
-     </div>
-   </div>
-   
-   
-   
->>>>>>> 567cc5129d93987a5352e1fca8637e80c67d998e
  </template>
  
  
