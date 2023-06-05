@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
+const public_build = false;
+
 const mobile =
   process.env.TAURI_PLATFORM === "android" ||
   process.env.TAURI_PLATFORM === "ios";
@@ -36,12 +38,19 @@ export default defineConfig(async () => ({
        },
        output: {
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'splashimage') {
-            // Set the output filename for the splash image
-            return 'assets/splashscreen.png';
+          const extension = assetInfo.name.slice(assetInfo.name.lastIndexOf('.'));
+
+          if (extension === '.html') {
+            return `[name].[ext]`;
+          }else{
+            if (assetInfo.name === 'splash.png') {
+              // Set the output filename for the splash image
+              return 'assets/splash.png';
+            }else{
+              return `assets/${assetInfo.name}`;
+            }
           }
-          // Use the default asset filename for other assets
-          return `[name].[ext]`;
+         
         }
 
         }
