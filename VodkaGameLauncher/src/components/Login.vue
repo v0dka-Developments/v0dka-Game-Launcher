@@ -1,5 +1,6 @@
 
 <template>
+  <titlebar></titlebar>
   <Toast />
   <video autoplay loop>
   <source src="../assets/aa.mp4" type="video/mp4">
@@ -26,7 +27,6 @@
                         <label for="username">Username</label>
                       </span>
                       <small class="p-error" id="username-error">{{ usernameError || '&nbsp;' }}</small>
-
                       <span class="p-float-label"> 
                         <InputText id="password" type="password" v-model="password" :class="{ 'p-invalid': passwordError }" aria-describedby="password-error" style="width: 100%;" />
                         <label for="password">Password</label>
@@ -35,7 +35,7 @@
                       <Button type="submit" severity="success" label="Log In" />
                     </form>
                     <div class="footer">
-                    Developed by vodka
+                    Developed by vodka and Megu
                   </div>
                   </div>
                   </div>
@@ -56,15 +56,13 @@
 
 
 <script setup>
-   import { onMounted } from 'vue';
+  import { onMounted } from 'vue';
   import router from '../router';
-
   import { useToast } from 'primevue/usetoast';
   import { useField, useForm } from 'vee-validate';
   import { invoke } from "@tauri-apps/api/tauri";
-
   import { getClient, Body, ResponseType } from '@tauri-apps/api/http';
-
+  import titlebar from './TitleBar.vue';
   const { handleSubmit, resetForm } = useForm();
   const { value: username, errorMessage: usernameErrorMessage } = useField('username', validateUsername);
   const { value: password, errorMessage: passwordErrorMessage } = useField('password', validatePassword);
@@ -207,7 +205,7 @@ body {
   padding: 20px;
   background-color: #181c1ca6;
   margin: auto; /* Öğeyi yatayda ortalar */
-  width: 500px; /* Maksimum genişlik */
+  width: 1000px; /* Maksimum genişlik */
   height: 400px;
 }
 
