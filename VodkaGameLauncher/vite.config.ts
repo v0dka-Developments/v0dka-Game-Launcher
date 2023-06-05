@@ -27,5 +27,23 @@ export default defineConfig(async () => ({
     minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
+
+    rollupOptions: {
+      input: {
+        index: './index.html',
+        splash: './src/splashscreen.html',
+        splashimage: './src/assets/splash.png' 
+       },
+       output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'splashimage') {
+            // Set the output filename for the splash image
+            return 'assets/splashscreen.png';
+          }
+          // Use the default asset filename for other assets
+          return `[name].[ext]`;
+        }
+
+        }
   },
-}));
+}}));
